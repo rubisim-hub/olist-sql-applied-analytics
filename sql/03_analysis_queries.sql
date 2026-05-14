@@ -1,4 +1,6 @@
-Query 1 — KPI overview
+/* =========================================================
+   QUERY 01 — KPI OVERVIEW
+   ========================================================= */
 WITH order_totals AS (
     SELECT
         order_id,
@@ -13,7 +15,10 @@ SELECT
     ROUND(MAX(order_gmv), 2) AS max_order_value
 FROM order_totals;
 
-Query 2 — Monthly revenue trend
+
+/* =========================================================
+   QUERY 02 — MONTHLY REVENUE TREND
+   ========================================================= */
 WITH order_totals AS (
     SELECT
         oi.order_id,
@@ -33,7 +38,10 @@ WHERE o.order_status NOT IN ('canceled', 'unavailable')
 GROUP BY strftime('%Y-%m', o.order_purchase_timestamp)
 ORDER BY purchase_month;
 
-Query 3 — Top 10 customers by revenue
+
+/* =========================================================
+   QUERY 03 — TOP 10 CUSTOMERS BY REVENUE
+   ========================================================= */
 SELECT
     c.customer_unique_id,
     COUNT(DISTINCT o.order_id) AS total_orders,
@@ -48,7 +56,10 @@ GROUP BY c.customer_unique_id
 ORDER BY total_revenue DESC
 LIMIT 10;
 
-Query 4 — Repeat customers
+
+/* =========================================================
+   QUERY 04 — REPEAT CUSTOMERS
+   ========================================================= */
 SELECT
     COUNT(*) AS repeat_customers
 FROM (
@@ -62,7 +73,10 @@ FROM (
     HAVING COUNT(DISTINCT o.order_id) > 1
 ) t;
 
-Query 5 — Revenue by category
+
+/* =========================================================
+   QUERY 05 — REVENUE BY CATEGORY
+   ========================================================= */
 SELECT
     COALESCE(pct.product_category_name_english, p.product_category_name) AS category,
     COUNT(*) AS items_sold,
@@ -79,7 +93,10 @@ GROUP BY category
 ORDER BY revenue DESC
 LIMIT 15;
 
-Query 6 — Monthly category trends
+
+/* =========================================================
+   QUERY 06 — MONTHLY CATEGORY TRENDS
+   ========================================================= */
 SELECT
     strftime('%Y-%m', o.order_purchase_timestamp) AS purchase_month,
     COALESCE(pct.product_category_name_english, p.product_category_name) AS category,
@@ -96,7 +113,10 @@ GROUP BY purchase_month, category
 HAVING revenue > 0
 ORDER BY purchase_month, revenue DESC;
 
-Query 7 — Top sellers by GMV
+
+/* =========================================================
+   QUERY 07 — TOP SELLERS BY GMV
+   ========================================================= */
 SELECT
     s.seller_id,
     s.seller_state,
@@ -112,7 +132,10 @@ GROUP BY s.seller_id, s.seller_state
 ORDER BY gmv DESC
 LIMIT 10;
 
-Query 8 — Seller concentration (top 10 sellers share)
+
+/* =========================================================
+   QUERY 08 — SELLER CONCENTRATION (TOP 10 SELLERS SHARE)
+   ========================================================= */
 WITH seller_revenue AS (
     SELECT
         oi.seller_id,
@@ -142,7 +165,10 @@ SELECT
     ROUND(100.0 * top10.top10_gmv / all_sellers.total_gmv, 2) AS top10_share_pct
 FROM top10, all_sellers;
 
-Query 9 — Order status distribution
+
+/* =========================================================
+   QUERY 09 — ORDER STATUS DISTRIBUTION
+   ========================================================= */
 SELECT
     order_status,
     COUNT(*) AS orders_count,
@@ -151,7 +177,10 @@ FROM orders
 GROUP BY order_status
 ORDER BY orders_count DESC;
 
-Query 10 — Delivery performance
+
+/* =========================================================
+   QUERY 10 — DELIVERY PERFORMANCE
+   ========================================================= */
 SELECT
     ROUND(AVG(julianday(order_delivered_customer_date) - julianday(order_purchase_timestamp)), 2) AS avg_delivery_days,
     ROUND(AVG(julianday(order_estimated_delivery_date) - julianday(order_purchase_timestamp)), 2) AS avg_estimated_days,
@@ -167,7 +196,10 @@ FROM orders
 WHERE order_delivered_customer_date IS NOT NULL
   AND order_estimated_delivery_date IS NOT NULL;
 
-Query 11 — Late delivery rate by customer state
+
+/* =========================================================
+   QUERY 11 — LATE DELIVERY RATE BY CUSTOMER STATE
+   ========================================================= */
 SELECT
     c.customer_state,
     COUNT(*) AS delivered_orders,
@@ -189,7 +221,10 @@ GROUP BY c.customer_state
 HAVING delivered_orders >= 100
 ORDER BY late_delivery_rate_pct DESC;
 
-Query 12 — Review score distribution
+
+/* =========================================================
+   QUERY 12 — REVIEW SCORE DISTRIBUTION
+   ========================================================= */
 SELECT
     review_score,
     COUNT(*) AS review_count,
@@ -198,7 +233,10 @@ FROM reviews
 GROUP BY review_score
 ORDER BY review_score;
 
-Query 13 — Lowest-rated categories with sufficient volume
+
+/* =========================================================
+   QUERY 13 — LOWEST-RATED CATEGORIES WITH SUFFICIENT VOLUME
+   ========================================================= */
 SELECT
     COALESCE(pct.product_category_name_english, p.product_category_name) AS category,
     COUNT(DISTINCT r.order_id) AS reviewed_orders,
@@ -218,7 +256,10 @@ HAVING reviewed_orders >= 100
 ORDER BY avg_review_score ASC, reviewed_orders DESC
 LIMIT 15;
 
-Query 14 — Payment type mix
+
+/* =========================================================
+   QUERY 14 — PAYMENT TYPE MIX
+   ========================================================= */
 SELECT
     payment_type,
     COUNT(*) AS payment_rows,
@@ -228,7 +269,10 @@ FROM payments
 GROUP BY payment_type
 ORDER BY total_payment_value DESC;
 
-Query 15 — ML-ready order feature preview
+
+/* =========================================================
+   QUERY 15 — ML-READY ORDER FEATURE PREVIEW
+   ========================================================= */
 WITH order_value AS (
     SELECT
         order_id,
