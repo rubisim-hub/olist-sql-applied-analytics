@@ -1,77 +1,236 @@
-# Applied SQL Analytics on Olist: Revenue, Customer Behavior, Delivery Performance, and Review Signals
+# Olist E-Commerce SQL Analysis (SQL Server)
 
-## Project Overview
-This project analyzes a multi-table Brazilian e-commerce dataset using SQL in SQLite. The goal is to answer business questions around revenue, customer behavior, seller performance, delivery operations, and customer satisfaction.
+## Overview
 
-The analysis was designed as a portfolio project for an Applied Data Scientist / ML Engineer trajectory, combining relational SQL analysis with business-oriented thinking and ML-ready feature ideas.
+This project analyzes the [Olist Brazilian E-Commerce dataset](https://github.com/olist/work-at-olist-data/tree/master/datasets) using **SQL Server Express** and **SQL Server Management Studio (SSMS)**.  
+The goal was to build a practical SQL portfolio project that demonstrates strong fundamentals in:
+
+- `SELECT`
+- `WHERE`
+- `JOIN`
+- `GROUP BY`
+- `COUNT / AVG / SUM`
+- business-oriented analytical thinking
+- data quality handling
+- transforming raw transactional data into actionable business insights
+
+The project was originally planned in SQLite, but was migrated to **SQL Server** due to CSV import limitations and schema-control issues during development. This also made the project more relevant for production-style analytics workflows.
+
+---
+
+## Project Goals
+
+The main objectives of this project were to:
+
+1. Import and organize raw e-commerce CSV files into SQL Server
+2. Build a clean relational analysis layer across customers, orders, products, payments, reviews, and sellers
+3. Answer core business questions around:
+   - revenue performance
+   - customer behavior
+   - category performance
+   - delivery operations
+   - seller concentration
+   - payment behavior
+   - review quality
+4. Create a portfolio-ready SQL project suitable for **Applied Data Scientist** and **ML Engineer-adjacent** roles
+5. Prepare an analysis structure that can later support feature engineering and ML use cases
+
+---
 
 ## Dataset
-Source: Brazilian E-Commerce Public Dataset by Olist  
-https://www.kaggle.com/datasets/olistbr/brazilian-ecommerce
 
-Core tables used in this project:
-- customers
-- orders
-- order_items
-- payments
-- reviews
-- products
-- sellers
-- product_category_translation
+This project uses the **Olist Brazilian E-Commerce Public Dataset**.  
+Source: [Olist dataset repository](https://github.com/olist/work-at-olist-data/tree/master/datasets)
 
-## Why this project fits an Applied Data Scientist profile
-This project goes beyond basic SQL querying by connecting multiple business domains:
-- revenue and order trends
-- customer behavior
-- seller performance
-- delivery delays
-- customer review signals
+### Core files used
 
-It also creates a natural bridge toward downstream ML tasks such as:
-- late delivery prediction
-- low review score prediction
-- customer segmentation
-- seller risk profiling
+The following CSV files were used in the project:
+
+- `olist_customers_dataset.csv`
+- `olist_orders_dataset.csv`
+- `olist_order_items_dataset.csv`
+- `olist_order_payments_dataset.csv`
+- `olist_order_reviews_dataset.csv`
+- `olist_products_dataset.csv`
+- `olist_sellers_dataset.csv`
+- `product_category_name_translation.csv`
+
+### File intentionally excluded
+
+- `olist_geolocation_dataset.csv`
+
+The geolocation file exists in the original dataset, but it was **not included in this SQL portfolio version** because it was not required for the core business analysis and is relatively large for lightweight GitHub/web-based workflows.  
+Dataset reference: [Olist datasets directory](https://github.com/olist/work-at-olist-data/tree/master/datasets)
+
+---
+
+## Schema
+
+This project uses a relational model centered around the customer order lifecycle.
+
+### Main tables
+
+- **customers**  
+  Customer identifiers and customer state
+
+- **orders**  
+  Order lifecycle timestamps and order status
+
+- **order_items**  
+  Product-level order line items, prices, freight, seller IDs
+
+- **products**  
+  Product metadata including category and physical dimensions
+
+- **payments**  
+  Payment method, installments, and payment value
+
+- **reviews**  
+  Customer review scores and review-related metadata
+
+- **sellers**  
+  Seller identifiers and seller location metadata
+
+- **product_category_translation**  
+  Mapping between Portuguese product category names and English category labels
+
+### Logical relationships
+
+- `customers.customer_id` → `orders.customer_id`
+- `orders.order_id` → `order_items.order_id`
+- `orders.order_id` → `payments.order_id`
+- `orders.order_id` → `reviews.order_id`
+- `order_items.product_id` → `products.product_id`
+- `order_items.seller_id` → `sellers.seller_id`
+- `products.product_category_name` → `product_category_translation.product_category_name`
+
+### Notes on schema handling
+
+Because the data was imported using the **SSMS Import Flat File Wizard**, some schema corrections were handled during setup:
+
+- `product_weight_g` had to be imported as `INT` instead of `SMALLINT` due to overflow
+- `product_category_name_translation.csv` initially imported with generic column names (`column1`, `column2`) and was renamed afterward
+- category analysis queries were updated with `COALESCE(..., 'unknown_category')` to safely handle missing category mappings
+
+---
+
+## Analysis Questions
+
+This project answers 12 portfolio-focused SQL questions:
+
+1. **KPI Overview**  
+   What is the overall scale of orders, GMV, and average order value?
+
+2. **Monthly Revenue Trend**  
+   How did orders and revenue evolve over time?
+
+3. **Revenue by Category**  
+   Which product categories generate the most revenue?
+
+4. **Top Customers by Revenue**  
+   Who are the highest-value customers?
+
+5. **Repeat Customers**  
+   How many customers placed more than one valid order?
+
+6. **Order Status Distribution**  
+   What share of orders were delivered, canceled, unavailable, or still in process?
+
+7. **Delivery Performance**  
+   How long does delivery take on average, and how often are orders late?
+
+8. **Late Delivery Rate by State**  
+   Which customer states experience the worst delivery performance?
+
+9. **Seller Concentration**  
+   How much GMV is generated by the top 10 sellers?
+
+10. **Lowest-Rated Categories**  
+    Which product categories receive the worst review scores, after filtering for meaningful volume?
+
+11. **Payment Type Mix**  
+    Which payment methods dominate the marketplace?
+
+12. **ML-Ready Order Feature Preview**  
+    Can the transactional data be transformed into features suitable for downstream modeling?
+
+---
+
+## Key Findings
+
+Based on the SQL analysis:
+
+1. **The marketplace is heavily delivery-driven**, with **97.02% of orders marked as delivered**, while canceled and unavailable orders remain below 1% each.
+
+2. **Customer repeat behavior is relatively limited**: only **2,888 repeat customers** were identified, suggesting that retention may be weaker than acquisition.
+
+3. **Delivery performance is strong on average**: actual delivery takes **12.50 days** versus **24.37 estimated days**, although **8.11% of delivered orders still arrive late**.
+
+4. **Operational performance varies significantly by state**. For example, late-delivery rates are much higher in **AL (23.93%)** and **MA (19.67%)** than in major states such as **SP (5.89%)** and **MG (5.62%)**.
+
+5. **Revenue is concentrated in a few product categories**, led by:
+   - `health_beauty` — **1,437,665.78**
+   - `watches_gifts` — **1,298,292.47**
+   - `bed_bath_table` — **1,240,386.13**
+
+6. **Some high-volume categories underperform on customer satisfaction**. For example:
+   - `office_furniture` — **3.49 avg review score**
+   - `fashion_male_clothing` — **3.66**
+   - `fixed_telephony` — **3.71**
+
+7. **Missing product metadata exists in the raw data**, which required grouping some rows under `unknown_category` in the final query logic.
+
+8. **Seller concentration is present but not extreme**: the **top 10 sellers contribute 12.88% of total GMV**, indicating a marketplace that is not overly dependent on a very small seller base.
+
+9. **Credit cards dominate payment behavior**, with:
+   - **78,519** payment rows
+   - **12,428,884.19** total payment value  
+   far ahead of boleto and voucher payments.
+
+10. **The dataset is highly suitable for ML-oriented work**, since it supports feature creation around delivery delays, payment behavior, customer geography, order size, and review outcomes.
+
+---
 
 ## Tools
-- SQL
-- SQLite
-- SQLiteOnline
-- GitHub
 
-## Project Objectives
-The project focuses on the following questions:
-1. What is the overall revenue and average order value?
-2. How does revenue change over time?
-3. Who are the top customers by lifetime value?
-4. Which product categories generate the highest revenue?
-5. Which sellers contribute the most GMV?
-6. How concentrated is seller revenue?
-7. What is the distribution of order statuses?
-8. How strong is delivery performance?
-9. Which states show higher late-delivery rates?
-10. How are review scores distributed?
-11. Which categories are associated with lower customer satisfaction?
-12. What payment patterns appear in the data?
-13. Which signals could be useful for future ML modeling?
+This project was built with:
 
-## Data Model
-This project uses a relational schema built from the original Olist CSV files and an analytical view (`vw_order_line_enriched`) to simplify business analysis.
+- **SQL Server Express**  
+  Free SQL Server edition for development and small applications  
+  [Microsoft SQL Server Downloads](https://www.microsoft.com/en-us/sql-server/sql-server-downloads)
 
-Main relationships:
-- `customers` → `orders`
-- `orders` → `order_items`
-- `orders` → `payments`
-- `orders` → `reviews`
-- `order_items` → `products`
-- `order_items` → `sellers`
+- **SQL Server Management Studio (SSMS)**  
+  Used for database management, CSV import, and query execution
+
+- **Import Flat File Wizard in SSMS**  
+  Used to import CSV files into new SQL Server tables  
+  [Microsoft Import Flat File Wizard Documentation](https://learn.microsoft.com/en-us/sql/relational-databases/import-export/import-flat-file-wizard?view=sql-server-ver17)
+
+- **GitHub**  
+  For versioning, documentation, and portfolio presentation
+
+---
 
 ## Repository Structure
+
 ```text
 olist-sql-applied-analytics/
+│
+├── README.md
+├── .gitignore
+├── LICENSE
+│
 ├── data/
 │   └── raw/
+│       └── README.md
+│
 ├── sql/
-├── outputs/
-└── README.md
+│   ├── 01_schema.sql
+│   ├── 02_analytics_view.sql
+│   ├── 03_analysis_queries_sql_server.sql
+│   └── 04_optional_data_checks.sql
+│
+└── outputs/
+    ├── key_findings.md
+    └── screenshots/
 
